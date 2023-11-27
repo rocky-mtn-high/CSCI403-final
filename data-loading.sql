@@ -12,7 +12,7 @@ CREATE TABLE office_episodes (
     writer TEXT,
     air_date DATE,
     prod_code INT,
-    us_viewers FLOAT
+    us_viewers INT
 );
 ALTER TABLE office_episodes ADD PRIMARY KEY(prod_code); 
 ALTER TABLE f23_group2.office_episodes OWNER TO f23_group2;
