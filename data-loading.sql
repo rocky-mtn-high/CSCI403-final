@@ -4,15 +4,16 @@ SET search_path TO f23_group2;
 --Episodes
 DROP TABLE IF EXISTS office_episodes_raw CASCADE;
 CREATE TABLE office_episodes_raw (
-    season NUMERIC(1),
-    episode_in_season NUMERIC(2),
-    episode_overall NUMERIC(3),
+    season NUMERIC(1) NOT NULL,
+    episode_in_season NUMERIC(2) NOT NULL,
+    episode_overall NUMERIC(3) NOT NULL UNIQUE,
     title TEXT,
     director TEXT,
     writer TEXT,
     air_date DATE,
     prod_code NUMERIC(4),
-    us_viewers FLOAT
+    us_viewers FLOAT,
+	CONSTRAINT UC_office_episodes_raw UNIQUE (season, episode_in_season)
 );
 
 \COPY office_episodes_raw FROM './data/office_episodes.csv' WITH CSV HEADER;
@@ -21,15 +22,16 @@ CREATE TABLE office_episodes_raw (
 DROP TABLE IF EXISTS office_episodes CASCADE;
 CREATE TABLE office_episodes (
 	id SERIAL PRIMARY KEY,
-    season NUMERIC(1),
-    episode_in_season NUMERIC(2),
-    episode_overall NUMERIC(3),
+    season NUMERIC(1) NOT NULL,
+    episode_in_season NUMERIC(2) NOT NULL,
+    episode_overall NUMERIC(3) NOT NULL UNIQUE,
     title TEXT,
     director TEXT,
     writer TEXT,
     air_date DATE,
     prod_code NUMERIC(4),
-    us_viewers INT
+    us_viewers INT,
+	CONSTRAINT UC_office_episodes UNIQUE (season, episode_in_season)
 );
 
 ALTER TABLE f23_group2.office_episodes OWNER TO f23_group2;
@@ -49,8 +51,9 @@ ALTER TABLE office_episodes DROP COLUMN writer;
 --IMDB ratings
 DROP TABLE IF EXISTS office_ratings_raw CASCADE;
 CREATE TABLE office_ratings_raw (
-   season NUMERIC(1),
-   episode_in_season NUMERIC(2), 
+   season NUMERIC(1) NOT NULL,
+   episode_in_season NUMERIC(2) NOT NULL,
+   CONSTRAINT UC_office_ratings_raw UNIQUE (season, episode_in_season),
    title TEXT,
    air_date DATE,
    rating FLOAT,
@@ -68,21 +71,22 @@ CREATE TABLE office_ratings (
    description TEXT
 );
 
-INSERT INTO office_ratings SELECT off.id, rat.rating, rat.total_votes, rat.description FROM office_ratings_raw AS rat JOIN office_episodes AS off ON rat.title = off.title;
+INSERT INTO office_ratings SELECT eps.id, rat.rating, rat.total_votes, rat.description FROM office_ratings_raw AS rat JOIN office_episodes AS eps ON rat.season = eps.season AND rat.episode_in_season = eps.episode_in_season;
 ALTER TABLE f23_group2.office_ratings OWNER TO f23_group2;
 DROP TABLE office_ratings_raw;
 
 --Then parks and rec
 DROP TABLE IF EXISTS parks_and_rec_episodes_raw CASCADE;
 CREATE TABLE parks_and_rec_episodes_raw (
-    season NUMERIC(1),
-    episode_in_season NUMERIC(2),
-    episode_overall NUMERIC(3),
+    season NUMERIC(1) NOT NULL,
+    episode_in_season NUMERIC(2) NOT NULL,
+    episode_overall NUMERIC(3) NOT NULL UNIQUE,
     title TEXT,
     director TEXT,
     writer TEXT,
     air_date DATE,
-    us_viewers FLOAT
+    us_viewers FLOAT,
+	CONSTRAINT UC_parks_and_rec_episodes_raw UNIQUE (season, episode_in_season)
 );
 
 \COPY parks_and_rec_episodes_raw FROM './data/parks_and_rec_episodes.csv' WITH CSV HEADER;
@@ -90,14 +94,15 @@ CREATE TABLE parks_and_rec_episodes_raw (
 DROP TABLE IF EXISTS parks_and_rec_episodes CASCADE;
 CREATE TABLE parks_and_rec_episodes (
 	id SERIAL PRIMARY KEY,
-    season NUMERIC(1),
-    episode_in_season NUMERIC(2),
-    episode_overall NUMERIC(3),
+    season NUMERIC(1) NOT NULL,
+    episode_in_season NUMERIC(2) NOT NULL,
+    episode_overall NUMERIC(3) NOT NULL UNIQUE,
     title TEXT,
     director TEXT,
     writer TEXT,
     air_date DATE,
-    us_viewers INT
+    us_viewers INT,
+	CONSTRAINT UC_parks_and_rec_episodes UNIQUE (season, episode_in_season)
 );
 
 INSERT INTO parks_and_rec_episodes (season, episode_in_season, episode_overall, title, director, writer, air_date, us_viewers) SELECT season, episode_in_season, episode_overall, title, director, writer, air_date, CAST(us_viewers AS INT) FROM parks_and_rec_episodes_raw;
@@ -117,8 +122,9 @@ ALTER TABLE parks_and_rec_episodes DROP COLUMN writer;
 --IMDB ratings
 DROP TABLE IF EXISTS parks_and_rec_ratings_raw CASCADE;
 CREATE TABLE parks_and_rec_ratings_raw (
-   season NUMERIC(1),
-   episode_in_season NUMERIC(2), 
+   season NUMERIC(1) NOT NULL,
+   episode_in_season NUMERIC(2) NOT NULL,
+   CONSTRAINT UC_parks_and_rec_ratings_raw UNIQUE (season, episode_in_season),
    title TEXT,
    air_date DATE,
    rating FLOAT,
@@ -138,5 +144,5 @@ CREATE TABLE parks_and_rec_ratings (
 );
 
 ALTER TABLE f23_group2.parks_and_rec_ratings OWNER TO f23_group2;
-INSERT INTO parks_and_rec_ratings SELECT eps.id, rat.rating, rat.total_votes, rat.description FROM parks_and_rec_ratings_raw AS rat JOIN parks_and_rec_episodes AS eps ON rat.title = eps.title AND rat.air_date = eps.air_date; --Episodes cannot be uniquely identified by title alone
+INSERT INTO parks_and_rec_ratings SELECT eps.id, rat.rating, rat.total_votes, rat.description FROM parks_and_rec_ratings_raw AS rat JOIN parks_and_rec_episodes AS eps ON rat.season = eps.season AND rat.episode_in_season = eps.episode_in_season;
 DROP TABLE parks_and_rec_ratings_raw;
